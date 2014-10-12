@@ -1,0 +1,557 @@
+#!/usr/bin/env tclsh
+#############################################################################
+#   brc - Bitrate Calculator                                                #
+#                                                                           #
+# Yet another bitrate calculator for movie encoding.                        #
+#                                                                           #
+# The goal is not to rule them all, but to provide a tool that does not     #
+# require a fancy runtime (no Java, .NET, ... only Tcl/Tk).                 #
+# Well, not a fancy runtime as far as Linux is concerned.                   #
+#                                                                           #
+# Shamelessly copied/inspired from the tools at:                            #
+#   [http://www.videohelp.com/tools/sections/bitrate-calculators]           #
+# And in particular:                                                        #
+#   Bitrate Calculator by philippe734                                       #
+#   [http://sourceforge.net/projects/bitratecalc/]                          #
+#                                                                           #
+# History:                                                                  #
+#   v1.0    Initial version                                                 #
+#############################################################################
+
+
+#############################################################################
+#############################################################################
+#
+# Packages
+#
+#############################################################################
+#############################################################################
+
+package require Tcl 8.6
+package require Tk
+
+
+#############################################################################
+#############################################################################
+#
+# Globals
+#
+#############################################################################
+#############################################################################
+
+# Version number
+set version "1.0"
+
+# Reentrancy flag for GUI updates
+set updating false
+
+# Video group settings
+set Video(Hours)   1
+set Video(Minutes) 0
+set Video(Seconds) 0
+set Video(Rate)    23.976
+set Video(Frames)  0
+set Video(Width)   1920
+set Video(Height)  1080
+set Video(Ratio)   0
+
+# Audio group settings
+set Audio(Tracks) 0
+
+# Compute group settings
+set Compute(Bitrate) 0
+set Compute(Quality) 0.082
+set Compute(Size)    0
+
+
+#############################################################################
+#############################################################################
+#
+# Resources
+#
+#############################################################################
+#############################################################################
+
+# CustomDesignIcon.com > Flatastic (part 1) > caculator (png,48x48)
+# License: http://www.customicondesign.com/license-agreement/
+image create photo ::img::brc -data {
+    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
+    YII=
+}
+
+# CustomDesignIcon.com > Flatastic (part 1) > add1 (png,16x16)
+# License: http://www.customicondesign.com/license-agreement/
+image create photo ::img::add -data {
+    iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACx0lEQVQ4jW2TT2icVRTFf/eb
+    b/44ms60+ePYSEeboLEoxbEtFkvbVChikYiCgrjIQtJl10LXLtx1oUgWkoVC1YVapQFLiaAU
+    BI34D6OmjdOaxKSakkwymflmvntczCSdgufxHu+9y333nPO4xhYM7urL2NDpgVJx5P6x9M7U
+    MEYRAFGOVhtT5c/mx2femZ2u/r0pfDsNCOC+433ZQ2/uP5fKp0ctIDAzs3ZYCEmS49FaNPHt
+    6z+cmb+0VMUhgUHheG/28FtPTIZ3hyOYAgzrTvTYSO5FeyT9qJWja1ZXHaEgkQ4e7z9ZOLr6
+    e+XDytxGI5HpTdtT7x54O7wnMYK1B9jJrmd5YefLDGX2MR/9xVx01ToY7+k70lO4cWHx82Dw
+    tQdKqXxyVMgcN5cjCTMjILj9psDlOG5CltwRjj50+sFS2P9cYcwDD1qKb2tGapvUcQet1YRQ
+    sPvUvWNhqic5LLDuRLeVsge3qw5mHsYwhNiXeYwECYSIFfPNxhVb0xphLhwOJRUNeCn/Ck/n
+    niFoWdCu29od6zrBsa4TgHDErpVuPlh5D0nFwN1xCbnoxJ2nOyEXLuHuhHEjLiulwfM332d2
+    bXZbQil3gEP5wwjx5b+X+W3915YEYq7UvyImxhteDqs3NqeyezMDS7bIxfqn1qIdkG1mOciT
+    APzY/J5L9ckOIyVJqi1GU8HCJ8vj3pDH7sSKt+eWBCFcTqyOuDvekC9cWBoPrn+0MF2dq024
+    u2KXXO0Eb+J4i7bHxGp5Fbvk7tq8Xp8on1+YTnjdqcysX+49sutokLU9MoHBzdqyqQ4/V37i
+    i8pFatQkCVxq/hN//cvZP15dv7rRsK2Wyu/fkR06O3Auszc1SvL/m4kGXv8zmph549qZW9+t
+    VhHb3w0GyVxo/c8XSn2nusfSu1PDlrQigBoqR4vR1PLkyvj8x4vT0a3mlp/8B1cih+u9k8Hn
+    AAAAAElFTkSuQmCC
+}
+
+# CustomDesignIcon.com > Flatastic (part 1) > delete1 (png,16x16)
+# License: http://www.customicondesign.com/license-agreement/
+image create photo ::img::remove -data {
+    iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAC0UlEQVQ4jVWSz2tUdxTFP/f7
+    JvPmR8G2ZiYT0GYT4tKQIGIrmKQB0ZSGhAY3VdpCB0FqF6V/iNDGMgHrQpQGpYUaQlapRXAj
+    kgYXErIwYl7MmCZQknH68r73djEvabzw3XzvOfdezjlCWg6o5HJytaen77MjR6qHw3AQ6Erb
+    K1txPH/v5cvataWlJ9GbN6ZpQ/bIwx0dhR/7+q69m81+4VpfIiIAmBmAKeg/cXzz6sLCt7Nr
+    aw0FxAEfl8uFmydOzGYzmdMCKQ1JiaSDzAAD2/X+4dePH5+bffWqEZTDUH45eXKy2NY2KiKS
+    PX9eXHe3JMvLKQUsCMiOjYmUSqLPnyPwwUCpVLm3uno/+L6np/90e/sPAi47MiL5S5fI9PZC
+    WxvJ06cQBOQvXyYcGSHT34+PItEXL8g6dzx0biYz3tlZRdWZCP/GMbn05HB0FESQQ4fIDgzs
+    axEnCaiCmRvt7KxKdPbsEtCNiOAcMjHBexcuIM79r4YZ6j2bU1O4ubmWqC2Blp2ZdZkZpop5
+    j05Ps3X3bmv7ARc2p6Zgbg5VbWHNMLOujO7rC2IGQUChvf2gfYgIhXKZHVVQxfbCI4JTkRVt
+    TUOd450rV8gNDe2fbdqKTGFsjMLFi6hIC2uGiqy4NdV5897MzAoTE+SHhgBQ73l9/Tobd+60
+    hohQHB8nHB7GVM28t79h3v26vl5LQL0qjShCkwRNEuqTk/iZGXZv3eL17duY9/g4prm+jlcl
+    Af2tXq/J4VxO7p85Uys1m1+JcyKnTglm2KNHYIYA5hwyOIhtbiILC6ZmtpXP3/jkwYOqCPBh
+    pVL4qbd3NtzZeSvKvF37UY6LxYffLC6e+yOKGgHA6vb27l/b29MfHT1aCZPkuJhJCj74zDun
+    W8Xiz98tLn7+ZxQ17OAWAd4PQ/ny2LG+Tzs6qmWRQUmSLgDLZFY2YP73er1249mzJxvNpu1Z
+    +R+xg3HCIzM2uAAAAABJRU5ErkJggg==
+}
+
+
+#############################################################################
+#############################################################################
+#
+# Procedures
+#
+#############################################################################
+#############################################################################
+
+#############################################################################
+# Compute the movie length in seconds.
+# /!\ No error handling in case of invalid user input!
+#
+# Arguments: NONE
+#
+# Globals:
+#   Video       Video group settings
+#
+# Variables: NONE
+#
+# Return:
+#   movie length in seconds
+#############################################################################
+proc Length {} {
+    global Video
+    return [expr {$Video(Hours)*3600 + $Video(Minutes)*60 + $Video(Seconds)}]
+}
+
+#############################################################################
+# Compute the total number of pixels in the movie (counting  all frames).
+# /!\ No error handling in case of invalid user input!
+#
+# Arguments: NONE
+#
+# Globals:
+#   Video       Video group settings
+#
+# Variables: NONE
+#
+# Return:
+#   total number of pixels for the movie
+#############################################################################
+proc VideoPixels {} {
+    global Video
+    return [expr {$Video(Width)*$Video(Height) * $Video(Frames)}]
+}
+
+#############################################################################
+# Compute the total size of the movie's audio tracks, in bytes.
+# /!\ No error handling in case of invalid user input!
+#
+# Arguments: NONE
+#
+# Globals:
+#   Audio       Audio group settings
+#
+# Variables: NONE
+#
+# Return:
+#   total size of all audio tracks in bytes
+#############################################################################
+proc AudioSize {} {
+    global Audio
+
+    # Compute the size for individual audio tracks
+    set length [Length]
+    set sizes {0}
+    for {set id 1} {$id <= $Audio(Tracks)} {incr id} {
+        lappend sizes [expr {$length * $Audio(Bitrate:$id) * 1000. / 8.}]
+    }
+
+    # Aggregate all the sizes
+    return [::tcl::mathop::+ {*}$sizes]
+}
+
+#############################################################################
+# Recompute and update all values.
+#
+# Arguments:
+#   args        ignored (for use with [trace])
+#
+# Globals:
+#   updating    flag to prevent re-entrancy (due to [trace])
+#   Compute     Compute group settings
+#
+# Variables: NONE
+#
+# Return: NONE
+#############################################################################
+proc Update {args} {
+    global updating
+    global Compute
+
+    # Prevent re-entrancy
+    if {$updating} {return}
+    set updating true
+
+    # Define the computation strategy according to the last modified element in the Compute group
+    lassign $args array element
+    if {$array eq "Compute"} {
+        set Compute(Strategy) $element
+    }
+
+    # Recompute everything
+    UpdateVideo
+    UpdateAudio
+    UpdateCompute
+
+    # We're done, stop preventing re-entrancy
+    set updating false
+}
+
+#############################################################################
+# Recompute and update all values in the Video group.
+#
+# Arguments: NONE
+#
+# Globals:
+#   Video       Video group settings
+#
+# Variables: NONE
+#
+# Return: NONE
+#############################################################################
+proc UpdateVideo {} {
+    global Video
+
+    # Compute the number of frames
+    try {
+        set Video(Frames) [expr {max(0,wide([Length]*$Video(Rate)))}]
+    } on error {} {
+        set Video(Frames) "N/A"
+    }
+
+    # Compute the aspect ratio
+    try {
+        set Video(Ratio) [format %.2f [expr {$Video(Width)/double($Video(Height))}]]
+    } on error {} {
+        set Video(Ratio) "N/A"
+    }
+}
+
+#############################################################################
+# Recompute and update all values in the Audio group.
+#
+# Arguments: NONE
+#
+# Globals:
+#   Audio       Audio group settings
+#
+# Variables: NONE
+#
+# Return: NONE
+#############################################################################
+proc UpdateAudio {} {
+    global Audio
+
+    # Compute the audio track sizes
+    for {set id 1} {$id <= $Audio(Tracks)} {incr id} {
+        try {
+            set Audio(Size:$id) [format %.2f [expr {[Length] * $Audio(Bitrate:$id) / 8. / 1000.}]]
+        } on error {} {
+            set Audio(Size:$id) "N/A"
+        }
+    }
+}
+
+#############################################################################
+# Recompute and update all values in the Compute group.
+#
+# Arguments: NONE
+#
+# Globals:
+#   Compute     Compute group settings
+#
+# Variables: NONE
+#
+# Return: NONE
+#############################################################################
+proc UpdateCompute {} {
+    global Compute
+
+    # Compute all settings in the Compute group
+    try {
+        # Compute the video size from the last modified Compute setting
+        switch -- $Compute(Strategy) {
+            "Bitrate" {
+                set videosize [expr {$Compute(Bitrate) * [Length] * 1000. / 8.}]
+            }
+            "Quality" {
+                set videosize [expr {$Compute(Quality) * [VideoPixels] / 8.}]
+            }
+            "Size" {
+                set videosize [expr {$Compute(Size) * 1000. * 1000. - [AudioSize]}]
+            }
+            default {
+                error "invalid strategy"
+            }
+        }
+        if {$videosize < 0} {
+            error "file too small"
+        }
+
+        # Compute the corresponding Compute settings
+        set Bitrate [format %.0f [expr {$videosize / [Length] / 1000. * 8.}]]
+        set Quality [format %.5f [expr {$videosize / [VideoPixels] * 8.}]]
+        set Size    [format %.0f [expr {($videosize + [AudioSize]) / 1000. / 1000.}]]
+
+        # Update all not-user-set Compute settings
+        foreach element {Bitrate Quality Size} {
+            if {$Compute(Strategy) ne $element} {
+                set Compute($element) [set $element]
+            }
+        }
+    } on error {} {
+        # Error: reset all non-user-set Compute settings
+        foreach element {Bitrate Quality Size} {
+            if {$Compute(Strategy) ne $element} {
+                set Compute($element) "N/A"
+            }
+        }
+    }
+}
+
+#############################################################################
+# Add an audio track to configure.
+#
+# Arguments: NONE
+#
+# Globals:
+#   Audio       Audio group settings
+#
+# Variables: NONE
+#
+# Return: NONE
+#############################################################################
+proc AddAudioTrack {} {
+    global Audio
+
+    # Define the base settings of the new track
+    incr Audio(Tracks)
+    set id $Audio(Tracks)
+    set Audio(Bitrate:$id) 128
+    set Audio(Size:$id)    0
+
+    # Remove the label if there was no track
+    if {$id eq 1} {
+        destroy .audio.labelnotracks
+    }
+
+    # Build the GUI for the new track
+    set frame [ttk::frame .audio.track${id}]
+    ttk::label $frame.label -text "Track $id" -width 10
+    set framebitrate [ttk::frame $frame.framebitrate]
+    ttk::label $framebitrate.labelbitrate -text "Bitrate:"
+    ttk::entry $framebitrate.bitrate      -textvariable ::Audio(Bitrate:$id) -justify right -width 7
+    ttk::label $framebitrate.labelbitrateunit -text "kbps"
+    pack $framebitrate.labelbitrate                           -side left -padx 3
+    pack $framebitrate.bitrate $framebitrate.labelbitrateunit -side left -padx 2
+    set framesize [ttk::frame $frame.framesize]
+    ttk::label $framesize.labelsize     -text "Size:"
+    ttk::entry $framesize.size          -textvariable ::Audio(Size:$id) -state readonly -justify right -width 7
+    ttk::label $framesize.labelsizeunit -text "MB"
+    pack $framesize.labelsize                     -side left -padx 3
+    pack $framesize.size $framesize.labelsizeunit -side left -padx 2
+    grid $frame.label $framebitrate $framesize -sticky nsew -padx 5
+    pack $frame -side top -fill x -pady {0 2}
+    grid configure $framebitrate $framesize -sticky e
+    grid columnconfigure $frame 0 -weight 2
+    grid columnconfigure $frame 1 -weight 1
+    grid columnconfigure $frame 2 -weight 1
+
+    # Update all values
+    Update
+}
+
+#############################################################################
+# Remove the last audio track.
+#
+# Arguments: NONE
+#
+# Globals:
+#   Audio       Audio group settings
+#
+# Variables: NONE
+#
+# Return: NONE
+#############################################################################
+proc RemoveAudioTrack {} {
+    global Audio
+
+    # Get the ID for the last track, bail out if there isn't any
+    set id $Audio(Tracks)
+    if {$id < 1} {return}
+
+    # Remove the GUI for the last track, add a label if it was the last track
+    destroy .audio.track${id}
+    if {$id eq 1} {
+        ttk::label .audio.labelnotracks -text "Add tracks using the above button" -style Italic.TLabel
+        pack .audio.labelnotracks -side left -pady {0 2}
+    }
+
+    # Forget the settings for the last track
+    incr Audio(Tracks) -1
+    unset Audio(Bitrate:$id) Audio(Size:$id)
+
+    # Update all values
+    Update
+}
+
+
+#############################################################################
+#############################################################################
+#
+# Body
+#
+#############################################################################
+#############################################################################
+
+# Add a trace on all settings to update the settings upon modification
+trace add variable Video   {write} {Update}
+trace add variable Audio   {write} {Update}
+trace add variable Compute {write} {Update}
+
+# Compute the missing initial settings, using the Quality compute strategy
+Update Compute Quality
+
+
+## Build the GUI
+
+# Configure the window
+wm title . "Bitrate Calculator"
+wm resizable . 0 0
+wm iconphoto . -default ::img::brc
+
+# Configure the required styles and select the theme
+ttk::style configure Italic.TLabel -font [dict merge [font actual [ttk::style lookup TLabel -font]] {-slant italic}]
+ttk::style theme use "clam"
+
+# Build the GUI for the Video group
+ttk::labelframe .video                   -text "Video"
+set framelength [ttk::frame .video.length]
+ttk::label      $framelength.labelhours  -text "Hours"
+ttk::spinbox    $framelength.hours       -textvariable Video(Hours) -from 0 -increment 1 -to 1000 -justify right -width [string length "Hours"]
+ttk::label      $framelength.labelmins   -text "Minutes"
+ttk::spinbox    $framelength.mins        -textvariable Video(Minutes) -from 0 -increment 1 -to 59 -justify right -width [string length "Minutes"]
+ttk::label      $framelength.labelsecs   -text "Seconds"
+ttk::spinbox    $framelength.secs        -textvariable Video(Seconds) -from 0 -increment 1 -to 59 -justify right -width [string length "Seconds"]
+ttk::label      $framelength.labelrate   -text "Framerate"
+ttk::combobox   $framelength.rate        -textvariable Video(Rate) -values {23.976 24.0 25.0 29.97 30.0 50.0 59.94 60.0} -justify right -width [string length "Framerate"]
+ttk::label      $framelength.labelframes -text "Total frames"
+ttk::entry      $framelength.frames      -textvariable Video(Frames) -state readonly -justify right -width [string length "Total frames"]
+grid $framelength.labelhours $framelength.labelmins $framelength.labelsecs $framelength.labelrate $framelength.labelframes -padx 5
+grid $framelength.hours      $framelength.mins      $framelength.secs      $framelength.rate      $framelength.frames      -padx 5
+set framesize [ttk::frame .video.size]
+ttk::label      $framesize.labelwidth    -text "Width"
+ttk::spinbox    $framesize.width         -textvariable Video(Width) -from 0 -increment 1 -to 100000 -justify right -width [string length "Width"]
+ttk::label      $framesize.labelheight   -text "Height"
+ttk::spinbox    $framesize.height        -textvariable Video(Height) -from 0 -increment 1 -to 100000 -justify right -width [string length "Height"]
+ttk::label      $framesize.labelratio    -text "Ratio"
+ttk::entry      $framesize.ratio         -textvariable Video(Ratio) -state readonly -justify right -width [string length "Ratio"]
+grid $framesize.labelwidth $framesize.labelheight $framesize.labelratio -padx 5
+grid $framesize.width      $framesize.height      $framesize.ratio      -padx 5
+pack $framelength $framesize -side top -fill x -ipady 3
+
+# Build the GUI for the Audio group
+ttk::labelframe .audio
+ttk::frame      .audio.group
+ttk::label      .audio.group.label  -text "Audio"
+ttk::button     .audio.group.add    -style Toolbutton -image ::img::add    -command {AddAudioTrack}
+ttk::button     .audio.group.remove -style Toolbutton -image ::img::remove -command {RemoveAudioTrack}
+pack .audio.group.label                   -side left -ipadx 3
+pack .audio.group.remove .audio.group.add -side right
+.audio configure -labelwidget .audio.group
+
+# Build the GUI for the Compute group
+ttk::labelframe .calc -text "Compute"
+ttk::label      .calc.labelbitrate     -text "Video bitrate:"
+ttk::entry      .calc.bitrate          -textvariable Compute(Bitrate) -justify right -width 5
+ttk::label      .calc.labelbitrateunit -text "kbps"
+ttk::label      .calc.labelquality     -text "Video quality:"
+ttk::entry      .calc.quality          -textvariable Compute(Quality) -justify right -width 5
+ttk::label      .calc.labelqualityunit -text "bits/(pixel*frame)"
+ttk::label      .calc.labelsize        -text "File size:"
+ttk::entry      .calc.size             -textvariable Compute(Size) -justify right -width 7
+ttk::label      .calc.labelsizeunit    -text "MB"
+grid .calc.labelbitrate .calc.bitrate .calc.labelbitrateunit -sticky nsew -padx 2 -pady 10
+grid .calc.labelquality .calc.quality .calc.labelqualityunit -sticky nsew -padx 2 -pady 10
+grid .calc.labelsize    .calc.size    .calc.labelsizeunit    -sticky nsew -padx 2 -pady 10
+grid configure .calc.labelbitrate .calc.labelquality .calc.labelsize -padx 3
+
+# Assemble it all
+grid .video .calc -sticky ew -padx 5 -pady 5
+grid .audio ^     -sticky ew -padx 5 -pady 5
+
+# Start out with one track
+AddAudioTrack
+
+
+# vim:ft=tcl
+################################ End of file ################################
