@@ -183,7 +183,7 @@ proc Length {} {
 }
 
 #############################################################################
-# Compute the total number of pixels in the movie (counting  all frames).
+# Compute the total number of pixels in the movie (counting all frames).
 # /!\ No error handling in case of invalid user input!
 #
 # Arguments: NONE
@@ -409,7 +409,7 @@ proc AddAudioTrack {} {
     ttk::label $frame.label -text "Track $id" -width 10
     set framebitrate [ttk::frame $frame.framebitrate]
     ttk::label $framebitrate.labelbitrate -text "Bitrate:"
-    ttk::entry $framebitrate.bitrate      -textvariable ::Audio(Bitrate:$id) -justify right -width 7
+    ttk::entry $framebitrate.bitrate      -textvariable ::Audio(Bitrate:$id) -justify right -width 7 -validate key -validatecommand {string is entier %P}
     ttk::label $framebitrate.labelbitrateunit -text "kbps"
     pack $framebitrate.labelbitrate                           -side left -padx 3
     pack $framebitrate.bitrate $framebitrate.labelbitrateunit -side left -padx 2
@@ -497,11 +497,11 @@ ttk::style theme use "clam"
 ttk::labelframe .video                   -text "Video"
 set framelength [ttk::frame .video.length]
 ttk::label      $framelength.labelhours  -text "Hours"
-ttk::spinbox    $framelength.hours       -textvariable Video(Hours) -from 0 -increment 1 -to 1000 -justify right -width [string length "Hours"]
+ttk::spinbox    $framelength.hours       -textvariable Video(Hours) -from 0 -increment 1 -to 1000 -justify right -width [string length "Hours"] -validate key -validatecommand {string is entier %P}
 ttk::label      $framelength.labelmins   -text "Minutes"
-ttk::spinbox    $framelength.mins        -textvariable Video(Minutes) -from 0 -increment 1 -to 59 -justify right -width [string length "Minutes"]
+ttk::spinbox    $framelength.mins        -textvariable Video(Minutes) -from 0 -increment 1 -to 59 -justify right -width [string length "Minutes"] -validate key -validatecommand {string is entier %P}
 ttk::label      $framelength.labelsecs   -text "Seconds"
-ttk::spinbox    $framelength.secs        -textvariable Video(Seconds) -from 0 -increment 1 -to 59 -justify right -width [string length "Seconds"]
+ttk::spinbox    $framelength.secs        -textvariable Video(Seconds) -from 0 -increment 1 -to 59 -justify right -width [string length "Seconds"] -validate key -validatecommand {string is entier %P}
 ttk::label      $framelength.labelrate   -text "Framerate"
 ttk::combobox   $framelength.rate        -textvariable Video(Rate) -values {23.976 24.0 25.0 29.97 30.0 50.0 59.94 60.0} -justify right -width [string length "Framerate"]
 ttk::label      $framelength.labelframes -text "Total frames"
@@ -510,9 +510,9 @@ grid $framelength.labelhours $framelength.labelmins $framelength.labelsecs $fram
 grid $framelength.hours      $framelength.mins      $framelength.secs      $framelength.rate      $framelength.frames      -padx 5
 set framesize [ttk::frame .video.size]
 ttk::label      $framesize.labelwidth    -text "Width"
-ttk::spinbox    $framesize.width         -textvariable Video(Width) -from 0 -increment 1 -to 100000 -justify right -width [string length "Width"]
+ttk::spinbox    $framesize.width         -textvariable Video(Width) -from 0 -increment 1 -to 100000 -justify right -width [string length "Width"] -validate key -validatecommand {string is entier %P}
 ttk::label      $framesize.labelheight   -text "Height"
-ttk::spinbox    $framesize.height        -textvariable Video(Height) -from 0 -increment 1 -to 100000 -justify right -width [string length "Height"]
+ttk::spinbox    $framesize.height        -textvariable Video(Height) -from 0 -increment 1 -to 100000 -justify right -width [string length "Height"] -validate key -validatecommand {string is entier %P}
 ttk::label      $framesize.labelratio    -text "Ratio"
 ttk::entry      $framesize.ratio         -textvariable Video(Ratio) -state readonly -justify right -width [string length "Ratio"]
 grid $framesize.labelwidth $framesize.labelheight $framesize.labelratio -padx 5
@@ -532,13 +532,13 @@ pack .audio.group.remove .audio.group.add -side right
 # Build the GUI for the Compute group
 ttk::labelframe .calc -text "Compute"
 ttk::label      .calc.labelbitrate     -text "Video bitrate:"
-ttk::entry      .calc.bitrate          -textvariable Compute(Bitrate) -justify right -width 5
+ttk::entry      .calc.bitrate          -textvariable Compute(Bitrate) -justify right -width 5 -validate key -validatecommand {string is entier %P}
 ttk::label      .calc.labelbitrateunit -text "kbps"
 ttk::label      .calc.labelquality     -text "Video quality:"
-ttk::entry      .calc.quality          -textvariable Compute(Quality) -justify right -width 5
+ttk::entry      .calc.quality          -textvariable Compute(Quality) -justify right -width 5 -validate key -validatecommand {string is entier %P}
 ttk::label      .calc.labelqualityunit -text "bits/(pixel*frame)"
 ttk::label      .calc.labelsize        -text "File size:"
-ttk::entry      .calc.size             -textvariable Compute(Size) -justify right -width 7
+ttk::entry      .calc.size             -textvariable Compute(Size) -justify right -width 7 -validate key -validatecommand {string is entier %P}
 ttk::label      .calc.labelsizeunit    -text "MB"
 grid .calc.labelbitrate .calc.bitrate .calc.labelbitrateunit -sticky nsew -padx 2 -pady 10
 grid .calc.labelquality .calc.quality .calc.labelqualityunit -sticky nsew -padx 2 -pady 10
