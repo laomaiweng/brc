@@ -28,7 +28,21 @@
 #############################################################################
 
 package require Tcl 8.6
+
+# Preserve argv from Tk
+set args $argv
+set argv {}
 package require Tk
+set argv $args
+unset args
+
+# TODO: This needs some tidying up
+lappend auto_path [file normalize [file join [file dirname $::argv0] laomaiweng-scripts]]
+
+package require getopt
+package require lwutils
+
+namespace import ::lwutils::die
 
 
 #############################################################################
@@ -59,9 +73,13 @@ set Video(Ratio)   0
 set Audio(Tracks) 0
 
 # Compute group settings
-set Compute(Bitrate) 0
-set Compute(Quality) 0.082
-set Compute(Size)    0
+set Compute(Bitrate)  0
+set Compute(Quality)  0.082
+set Compute(Size)     0
+set Compute(Strategy) Quality
+
+# CLI track settings
+set clitracks {}
 
 
 #############################################################################
@@ -473,13 +491,81 @@ proc RemoveAudioTrack {} {
 #############################################################################
 #############################################################################
 
+# Process command line arguments
+getopt flag arg $argv {
+    -d: - --duration: {
+        # Set the video duration
+        lassign [split $arg :] Video(Hours) Video(Minutes) Video(Seconds)
+    }
+    -f: - --framerate: {
+        # Set the video framerate
+        set Video(Rate) $arg
+    }
+    -s: - --size: {
+        # Set the video size
+        lassign [split $arg x] Video(Width) Video(Height)
+    }
+    -t: - --track: {
+        # Record the track settings
+        lappend clitracks $arg
+    }
+    -b: - --bitrate: -
+    -q: - --quality: -
+    -S: - --filesize: {
+        # Get the strategy corresponding to the flag
+        set strategy [dict get [dict create \
+                -b          Bitrate         \
+                --bitrate   Bitrate         \
+                -q          Quality         \
+                --quality   Quality         \
+                -S          Size            \
+                --filesize  Size            \
+            ] $flag]
+        # Set the target bitrate/quality/size and record it as current strategy
+        set Compute($strategy) $arg
+        set Compute(Strategy) $strategy
+    }
+    -h - --help {
+        puts "  Usage: [info script -bare] \[options\]
+
+Simple bitrate calculator for video encoding.
+
+Options:
+  -d | --duration <HH>:<MM>:<SS>    video duration (hours, minutes, seconds)
+  -f | --framerate <fps>            video framerate (frames per second)
+  -s | --size <width>x<height>      video size (pixels)
+  -t | --track <#>:<bitrate>        audio bitrate for track <#> (kbps)
+  -b | --bitrate <bitrate>          target video bitrate (kbps)
+  -q | --quality <quality>          target video quality (bits per pixel per frame)
+  -S | --filesize                   target total filesize (MB)
+"
+        exit 0
+    }
+    -V - --version {
+        puts "[info script -bare] version $version"
+        exit 0
+    }
+    missing {
+        die "option requires argument: $arg" 1
+    }
+    unknown {
+        die "unknown or ambiguous option: $arg" 1
+    }
+    arglist {
+        if {[llength $arg]} {
+            die "unexpected arguments: $arg" 1
+        }
+    }
+}
+
+
 # Add a trace on all settings to update the settings upon modification
 trace add variable Video   {write} {Update}
 trace add variable Audio   {write} {Update}
 trace add variable Compute {write} {Update}
 
-# Compute the missing initial settings, using the Quality compute strategy
-Update Compute Quality
+# Compute the missing initial settings
+Update Compute $Compute(Strategy)
 
 
 ## Build the GUI
@@ -551,6 +637,19 @@ grid .audio ^     -sticky ew -padx 5 -pady 5
 
 # Start out with one track
 AddAudioTrack
+
+
+# Apply the CLI track settings
+foreach track $clitracks {
+    # Extract the track id and bitrate
+    lassign [split $track :] id bitrate
+    # Add tracks as needed
+    while {$id > $Audio(Tracks)} {
+        AddAudioTrack
+    }
+    # Set the track bitrate
+    set Audio(Bitrate:$id) $bitrate
+}
 
 
 # vim:ft=tcl
