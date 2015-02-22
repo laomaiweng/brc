@@ -29,13 +29,6 @@
 
 package require Tcl 8.6
 
-# Preserve argv from Tk
-set args $argv
-set argv {}
-package require Tk
-set argv $args
-unset args
-
 # TODO: This needs some tidying up
 lappend auto_path [file normalize [file join [file dirname $::argv0] laomaiweng-scripts]]
 
@@ -78,6 +71,9 @@ set Compute(Quality)  0.082
 set Compute(Size)     0
 set Compute(Strategy) Quality
 
+# GUI flag
+set gui [expr {![llength $argv]}]
+
 # CLI track settings
 set clitracks {}
 
@@ -90,86 +86,93 @@ set clitracks {}
 #############################################################################
 #############################################################################
 
-# CustomDesignIcon.com > Flatastic (part 1) > caculator (png,48x48)
-# License: http://www.customicondesign.com/license-agreement/
-image create photo ::img::brc -data {
-    iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAHYUlEQVRogc1aT2hTXRb/3fvy
-    ak3SxHRscZKCfxj5tEWLMIJQUIevC6krsQiuXLnwGz7GxdCVIIVunIHZjHyrgZbiLNQZhVmJ
-    VKwu2oWjOOrCoZQx1FQSmxJj/yXvvXu+RfKu7899mZcmjnMg5OXk3HN/554/99ybMCgoHo+j
-    v7+/Q9O0McbYZQB9AJhK9isSAVgior8Q0R/evn1bLZVKPiFNNbK/v591dHT8FcBvASTwvweP
-    +pwJAL9hjH2XTCb/ns/nQUQuIe4dFYvF0NnZ+T0RjToUfStiAEBEo7quf59IJHwCES+jo6OD
-    ARgGwIhIgmeM+axvGV04nTaG4R07djxCLbQk+TwAAEQUV/C2g7EhNaNThQkIMOD/lVQG+0LI
-    IeyKfcaY69n5uR1kgyMiFdDAyZQGEJESIGMM+/btw4ULFxCLxbaP1jGPrdcwDDx48ADPnj1T
-    5kZQuAV6ALVkkVYQESKRCCYmJtDb29sy+NXVVbx//x6MMRw6dAi6ruPEiRO4fPkycrmcCouS
-    gpIYRMRsd9rWd3d3I5VKQQjR0suyLMzOzqJarWJhYQHZbBZCCHDOceDAAScGFxYV+TzgjEUV
-    maYZtBihSQiBWCyGw4cPo7OzE5xzmKYJIUTD+UMncT0HfCFERLAsq2UDiAgbGxuwLAuVSgW6
-    rsOyLGmAAig1nQOqKiSEgGmagUkeloQQ+Pz5M+bn57G0tITjx49LD9j6PYDbU4VWV1eRy+WQ
-    Tqe3Dd6mkydPIp/PI5VKYc+ePTBNE1tbW1hcXFTKt6UKmaaJiYkJjIyMYOfOna3gdwHKZrMw
-    TRNPnz5FoVBQhlCQnkAPwOM2uzZ/+PABk5OTkmfLb/fZaUxA/AO1viy8AQFGMdRXQggRdth/
-    I6kzJAYfL3QZZYwFVoLtUjt0Bm5k8KzMN+5G21NGv9F5AGhHGXXyOOcuvjcnOOdS1gZpyzgb
-    OMaY1BUk55wntAH2GCgq0djYGI4dOyZ5r169wo0bN1wtRiaTwbVr17Br1y4AtfZjamoKMzMz
-    rglGRkZw8eJFRCI1GMViEePj48jn8yoszbUSKvA9PT04e/YsdF2XHslkMpiamkIul5O806dP
-    48iRI3KViQijo6N49OiRXGHOOUZHR2XzxhhDX18fhoaGcP/+fa9Xmy+jqgHe0LDfbZC2AfaK
-    OmU45746r2ma76CkkmtEyjIa1MxVq1UYhiENsXnVatVVftfW1lwrSERYX193gRJCyIbOBi2E
-    wObm5tdr5lZWVjA9PY3BwUFpwJs3b1AoFCRQAJidncXAwABSqRQAwDAM3L5927WyRIRbt27h
-    3Llz0mMrKyuYm5trqpnzfZFIJNjevXv/zBj7wSfcQil1thHOz96Wwg5DRRX6aXl5+cdisej6
-    oqkq5FQaxhgn6KCySES+hiKomWu5CjHGkE6ncfDgQclfXFzE0tKSa2LOOQYHB11l9MWLF9jY
-    2HB5gEcZogOdYFptKrNkYfPfFYB8YFtv5gAgGo1icnISyWRSurpcLuP8+fMol8sS2PDwMMbH
-    x13J/vDhQ1y/fv0LMAb88ne/QPzXO78slQXkbqxg7Z+boTE18oCvCiUSCXR1dbnKXTweRyKR
-    gPPmuK+vD5xzaJomx2YyGV8SR3o4BCeweggRB7QeDkHC26OGr0IOQeWR0n5W9ff2WCFEoIxL
-    HxEECTkRASAok7i5XshjiKRyuYxcLofu7m7JK5VK+PTpk6uCZLNZlEol6LouDVpYWHDdOoAA
-    QQKCLDC4kz1oI2sqiVUb2fr6Oq5evYr9+/dL2Xfv3qFcLrtW//HjxyiVSujq6gJQS+KXL1/6
-    NjcBAUEEBjusAk9l29rIlPxsNotsNutzs3eXff78ua/2O58ZWN0DjhCiWgg1mj+UAap22sl3
-    Xu4Gudsb7145IqrngDqEVHOHNqA+wJfEnHNcuXLF1U6/fv0aN2/ehGVZ0sDe3l6MjY0hmUwC
-    ACzLwvT0NObm5r4UAjAQCQhiPgMUgNtyL8R2795Nly5dkr0LABw9ehR3797F8vKy5J05cwan
-    Tp2S+4AQApqmYX5+3qVQkGCCGEl89bwIwhTKgIAVAACKRCK+3wbseu+sQrquu+Q459JoTxUi
-    S+GBr1aFDMOAaZquc4FpmjAMw2X45uam3AtsXqVS8VUhqyLABfsyiwBERSgXr23t9L1793xH
-    yo8fP0pQAPDkyRMMDQ25eqE7d+64VpYRw9qDLcSwQ96NiE8CW/8ylL1QEE7fF/F4nKXT6Ybt
-    tOpWrZGc97kmU9t5BTlingDOuPK6i4h+KhQKP5ZKpdba6TBlU3Wz4De8zvOsoYpnmxMqB6h+
-    tHNendgAG20uYTYer0yQThXP1YY4yHczVzdgbTsAm6VmdAoh1kIZYBgGEdGMZVlUJ1eFaecr
-    pE6qY5kxTdNnge/PHkIIRKPR/2ia1g9goM4OPBG1QiF0Uj0i/maa5h+LxaJPQPlvla2tLUSj
-    0X8wxgwi+hURJcjzq2WbXo10EhEtEdGfLMv6faFQsFS/z/0M5TaANZtAN3YAAAAASUVORK5C
-    YII=
-}
+# Wrap resource-loading in a proc that will only be called if the GUI is used
+proc LoadResources {} {
+    # CustomDesignIcon.com > Flatastic (part 1) > caculator (png,48x48)
+    # License: http://www.customicondesign.com/license-agreement/
+    image create photo ::img::brc -data {
+        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
+        SUVORK5CYII=
+    }
 
-# CustomDesignIcon.com > Flatastic (part 1) > add1 (png,16x16)
-# License: http://www.customicondesign.com/license-agreement/
-image create photo ::img::add -data {
-    iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACx0lEQVQ4jW2TT2icVRTFf/eb
-    b/44ms60+ePYSEeboLEoxbEtFkvbVChikYiCgrjIQtJl10LXLtx1oUgWkoVC1YVapQFLiaAU
-    BI34D6OmjdOaxKSakkwymflmvntczCSdgufxHu+9y333nPO4xhYM7urL2NDpgVJx5P6x9M7U
-    MEYRAFGOVhtT5c/mx2femZ2u/r0pfDsNCOC+433ZQ2/uP5fKp0ctIDAzs3ZYCEmS49FaNPHt
-    6z+cmb+0VMUhgUHheG/28FtPTIZ3hyOYAgzrTvTYSO5FeyT9qJWja1ZXHaEgkQ4e7z9ZOLr6
-    e+XDytxGI5HpTdtT7x54O7wnMYK1B9jJrmd5YefLDGX2MR/9xVx01ToY7+k70lO4cWHx82Dw
-    tQdKqXxyVMgcN5cjCTMjILj9psDlOG5CltwRjj50+sFS2P9cYcwDD1qKb2tGapvUcQet1YRQ
-    sPvUvWNhqic5LLDuRLeVsge3qw5mHsYwhNiXeYwECYSIFfPNxhVb0xphLhwOJRUNeCn/Ck/n
-    niFoWdCu29od6zrBsa4TgHDErpVuPlh5D0nFwN1xCbnoxJ2nOyEXLuHuhHEjLiulwfM332d2
-    bXZbQil3gEP5wwjx5b+X+W3915YEYq7UvyImxhteDqs3NqeyezMDS7bIxfqn1qIdkG1mOciT
-    APzY/J5L9ckOIyVJqi1GU8HCJ8vj3pDH7sSKt+eWBCFcTqyOuDvekC9cWBoPrn+0MF2dq024
-    u2KXXO0Eb+J4i7bHxGp5Fbvk7tq8Xp8on1+YTnjdqcysX+49sutokLU9MoHBzdqyqQ4/V37i
-    i8pFatQkCVxq/hN//cvZP15dv7rRsK2Wyu/fkR06O3Auszc1SvL/m4kGXv8zmph549qZW9+t
-    VhHb3w0GyVxo/c8XSn2nusfSu1PDlrQigBoqR4vR1PLkyvj8x4vT0a3mlp/8B1cih+u9k8Hn
-    AAAAAElFTkSuQmCC
-}
+    # CustomDesignIcon.com > Flatastic (part 1) > add1 (png,16x16)
+    # License: http://www.customicondesign.com/license-agreement/
+    image create photo ::img::add -data {
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACx0lEQVQ4jW2TT2icVRTF
+        f/ebb/44ms60+ePYSEeboLEoxbEtFkvbVChikYiCgrjIQtJl10LXLtx1oUgWkoVC1YVa
+        pQFLiaAUBI34D6OmjdOaxKSakkwymflmvntczCSdgufxHu+9y333nPO4xhYM7urL2NDp
+        gVJx5P6x9M7UMEYRAFGOVhtT5c/mx2femZ2u/r0pfDsNCOC+433ZQ2/uP5fKp0ctIDAz
+        s3ZYCEmS49FaNPHt6z+cmb+0VMUhgUHheG/28FtPTIZ3hyOYAgzrTvTYSO5FeyT9qJWj
+        a1ZXHaEgkQ4e7z9ZOLr6e+XDytxGI5HpTdtT7x54O7wnMYK1B9jJrmd5YefLDGX2MR/9
+        xVx01ToY7+k70lO4cWHx82DwtQdKqXxyVMgcN5cjCTMjILj9psDlOG5CltwRjj50+sFS
+        2P9cYcwDD1qKb2tGapvUcQet1YRQsPvUvWNhqic5LLDuRLeVsge3qw5mHsYwhNiXeYwE
+        CYSIFfPNxhVb0xphLhwOJRUNeCn/Ck/nniFoWdCu29od6zrBsa4TgHDErpVuPlh5D0nF
+        wN1xCbnoxJ2nOyEXLuHuhHEjLiulwfM332d2bXZbQil3gEP5wwjx5b+X+W3915YEYq7U
+        vyImxhteDqs3NqeyezMDS7bIxfqn1qIdkG1mOciTAPzY/J5L9ckOIyVJqi1GU8HCJ8vj
+        3pDH7sSKt+eWBCFcTqyOuDvekC9cWBoPrn+0MF2dq024u2KXXO0Eb+J4i7bHxGp5Fbvk
+        7tq8Xp8on1+YTnjdqcysX+49sutokLU9MoHBzdqyqQ4/V37ii8pFatQkCVxq/hN//cvZ
+        P15dv7rRsK2Wyu/fkR06O3Auszc1SvL/m4kGXv8zmph549qZW9+tVhHb3w0GyVxo/c8X
+        Sn2nusfSu1PDlrQigBoqR4vR1PLkyvj8x4vT0a3mlp/8B1cih+u9k8HnAAAAAElFTkSu
+        QmCC
+    }
 
-# CustomDesignIcon.com > Flatastic (part 1) > delete1 (png,16x16)
-# License: http://www.customicondesign.com/license-agreement/
-image create photo ::img::remove -data {
-    iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAC0UlEQVQ4jVWSz2tUdxTFP/f7
-    JvPmR8G2ZiYT0GYT4tKQIGIrmKQB0ZSGhAY3VdpCB0FqF6V/iNDGMgHrQpQGpYUaQlapRXAj
-    kgYXErIwYl7MmCZQknH68r73djEvabzw3XzvOfdezjlCWg6o5HJytaen77MjR6qHw3AQ6Erb
-    K1txPH/v5cvataWlJ9GbN6ZpQ/bIwx0dhR/7+q69m81+4VpfIiIAmBmAKeg/cXzz6sLCt7Nr
-    aw0FxAEfl8uFmydOzGYzmdMCKQ1JiaSDzAAD2/X+4dePH5+bffWqEZTDUH45eXKy2NY2KiKS
-    PX9eXHe3JMvLKQUsCMiOjYmUSqLPnyPwwUCpVLm3uno/+L6np/90e/sPAi47MiL5S5fI9PZC
-    WxvJ06cQBOQvXyYcGSHT34+PItEXL8g6dzx0biYz3tlZRdWZCP/GMbn05HB0FESQQ4fIDgzs
-    axEnCaiCmRvt7KxKdPbsEtCNiOAcMjHBexcuIM79r4YZ6j2bU1O4ubmWqC2Blp2ZdZkZpop5
-    j05Ps3X3bmv7ARc2p6Zgbg5VbWHNMLOujO7rC2IGQUChvf2gfYgIhXKZHVVQxfbCI4JTkRVt
-    TUOd450rV8gNDe2fbdqKTGFsjMLFi6hIC2uGiqy4NdV5897MzAoTE+SHhgBQ73l9/Tobd+60
-    hohQHB8nHB7GVM28t79h3v26vl5LQL0qjShCkwRNEuqTk/iZGXZv3eL17duY9/g4prm+jlcl
-    Af2tXq/J4VxO7p85Uys1m1+JcyKnTglm2KNHYIYA5hwyOIhtbiILC6ZmtpXP3/jkwYOqCPBh
-    pVL4qbd3NtzZeSvKvF37UY6LxYffLC6e+yOKGgHA6vb27l/b29MfHT1aCZPkuJhJCj74zDun
-    W8Xiz98tLn7+ZxQ17OAWAd4PQ/ny2LG+Tzs6qmWRQUmSLgDLZFY2YP73er1249mzJxvNpu1Z
-    +R+xg3HCIzM2uAAAAABJRU5ErkJggg==
+    # CustomDesignIcon.com > Flatastic (part 1) > delete1 (png,16x16)
+    # License: http://www.customicondesign.com/license-agreement/
+    image create photo ::img::remove -data {
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAC0UlEQVQ4jVWSz2tUdxTF
+        P/f7JvPmR8G2ZiYT0GYT4tKQIGIrmKQB0ZSGhAY3VdpCB0FqF6V/iNDGMgHrQpQGpYUa
+        QlapRXAjkgYXErIwYl7MmCZQknH68r73djEvabzw3XzvOfdezjlCWg6o5HJytaen77Mj
+        R6qHw3AQ6ErbK1txPH/v5cvataWlJ9GbN6ZpQ/bIwx0dhR/7+q69m81+4VpfIiIAmBmA
+        Keg/cXzz6sLCt7Nraw0FxAEfl8uFmydOzGYzmdMCKQ1JiaSDzAAD2/X+4dePH5+bffWq
+        EZTDUH45eXKy2NY2KiKSPX9eXHe3JMvLKQUsCMiOjYmUSqLPnyPwwUCpVLm3uno/+L6n
+        p/90e/sPAi47MiL5S5fI9PZCWxvJ06cQBOQvXyYcGSHT34+PItEXL8g6dzx0biYz3tlZ
+        RdWZCP/GMbn05HB0FESQQ4fIDgzsaxEnCaiCmRvt7KxKdPbsEtCNiOAcMjHBexcuIM79
+        r4YZ6j2bU1O4ubmWqC2Blp2ZdZkZpop5j05Ps3X3bmv7ARc2p6Zgbg5VbWHNMLOujO7r
+        C2IGQUChvf2gfYgIhXKZHVVQxfbCI4JTkRVtTUOd450rV8gNDe2fbdqKTGFsjMLFi6hI
+        C2uGiqy4NdV5897MzAoTE+SHhgBQ73l9/Tobd+60hohQHB8nHB7GVM28t79h3v26vl5L
+        QL0qjShCkwRNEuqTk/iZGXZv3eL17duY9/g4prm+jlclAf2tXq/J4VxO7p85Uys1m1+J
+        cyKnTglm2KNHYIYA5hwyOIhtbiILC6ZmtpXP3/jkwYOqCPBhpVL4qbd3NtzZeSvKvF37
+        UY6LxYffLC6e+yOKGgHA6vb27l/b29MfHT1aCZPkuJhJCj74zDunW8Xiz98tLn7+ZxQ1
+        7OAWAd4PQ/ny2LG+Tzs6qmWRQUmSLgDLZFY2YP73er1249mzJxvNpu1Z+R+xg3HCIzM2
+        uAAAAABJRU5ErkJggg==
+    }
 }
 
 
@@ -403,6 +406,7 @@ proc UpdateCompute {} {
 #
 # Globals:
 #   Audio       Audio group settings
+#   gui         GUI flag
 #
 # Variables: NONE
 #
@@ -410,6 +414,7 @@ proc UpdateCompute {} {
 #############################################################################
 proc AddAudioTrack {} {
     global Audio
+    global gui
 
     # Define the base settings of the new track
     incr Audio(Tracks)
@@ -417,32 +422,35 @@ proc AddAudioTrack {} {
     set Audio(Bitrate:$id) 128
     set Audio(Size:$id)    0
 
-    # Remove the label if there was no track
-    if {$id eq 1} {
-        destroy .audio.labelnotracks
-    }
+    # Update the GUI
+    if {$gui} {
+        # Remove the label if there was no track
+        if {$id eq 1} {
+            destroy .audio.labelnotracks
+        }
 
-    # Build the GUI for the new track
-    set frame [ttk::frame .audio.track${id}]
-    ttk::label $frame.label -text "Track $id" -width 10
-    set framebitrate [ttk::frame $frame.framebitrate]
-    ttk::label $framebitrate.labelbitrate -text "Bitrate:"
-    ttk::entry $framebitrate.bitrate      -textvariable ::Audio(Bitrate:$id) -justify right -width 7 -validate key -validatecommand {string is entier %P}
-    ttk::label $framebitrate.labelbitrateunit -text "kbps"
-    pack $framebitrate.labelbitrate                           -side left -padx 3
-    pack $framebitrate.bitrate $framebitrate.labelbitrateunit -side left -padx 2
-    set framesize [ttk::frame $frame.framesize]
-    ttk::label $framesize.labelsize     -text "Size:"
-    ttk::entry $framesize.size          -textvariable ::Audio(Size:$id) -state readonly -justify right -width 7
-    ttk::label $framesize.labelsizeunit -text "MB"
-    pack $framesize.labelsize                     -side left -padx 3
-    pack $framesize.size $framesize.labelsizeunit -side left -padx 2
-    grid $frame.label $framebitrate $framesize -sticky nsew -padx 5
-    pack $frame -side top -fill x -pady {0 2}
-    grid configure $framebitrate $framesize -sticky e
-    grid columnconfigure $frame 0 -weight 2
-    grid columnconfigure $frame 1 -weight 1
-    grid columnconfigure $frame 2 -weight 1
+        # Build the GUI for the new track
+        set frame [ttk::frame .audio.track${id}]
+        ttk::label $frame.label -text "Track $id" -width 10
+        set framebitrate [ttk::frame $frame.framebitrate]
+        ttk::label $framebitrate.labelbitrate -text "Bitrate:"
+        ttk::entry $framebitrate.bitrate      -textvariable ::Audio(Bitrate:$id) -justify right -width 7 -validate key -validatecommand {string is entier %P}
+        ttk::label $framebitrate.labelbitrateunit -text "kbps"
+        pack $framebitrate.labelbitrate                           -side left -padx 3
+        pack $framebitrate.bitrate $framebitrate.labelbitrateunit -side left -padx 2
+        set framesize [ttk::frame $frame.framesize]
+        ttk::label $framesize.labelsize     -text "Size:"
+        ttk::entry $framesize.size          -textvariable ::Audio(Size:$id) -state readonly -justify right -width 7
+        ttk::label $framesize.labelsizeunit -text "MB"
+        pack $framesize.labelsize                     -side left -padx 3
+        pack $framesize.size $framesize.labelsizeunit -side left -padx 2
+        grid $frame.label $framebitrate $framesize -sticky nsew -padx 5
+        pack $frame -side top -fill x -pady {0 2}
+        grid configure $framebitrate $framesize -sticky e
+        grid columnconfigure $frame 0 -weight 2
+        grid columnconfigure $frame 1 -weight 1
+        grid columnconfigure $frame 2 -weight 1
+    }
 
     # Update all values
     Update
@@ -455,6 +463,7 @@ proc AddAudioTrack {} {
 #
 # Globals:
 #   Audio       Audio group settings
+#   gui         GUI flag
 #
 # Variables: NONE
 #
@@ -462,16 +471,20 @@ proc AddAudioTrack {} {
 #############################################################################
 proc RemoveAudioTrack {} {
     global Audio
+    global gui
 
     # Get the ID for the last track, bail out if there isn't any
     set id $Audio(Tracks)
     if {$id < 1} {return}
 
-    # Remove the GUI for the last track, add a label if it was the last track
-    destroy .audio.track${id}
-    if {$id eq 1} {
-        ttk::label .audio.labelnotracks -text "Add tracks using the above button" -style Italic.TLabel
-        pack .audio.labelnotracks -side left -pady {0 2}
+    # Update the GUI
+    if {$gui} {
+        # Remove the GUI for the last track, add a label if it was the last track
+        destroy .audio.track${id}
+        if {$id eq 1} {
+            ttk::label .audio.labelnotracks -text "Add tracks using the above button" -style Italic.TLabel
+            pack .audio.labelnotracks -side left -pady {0 2}
+        }
     }
 
     # Forget the settings for the last track
@@ -525,6 +538,10 @@ getopt flag arg $argv {
         set Compute($strategy) $arg
         set Compute(Strategy) $strategy
     }
+    -g - --gui {
+        # Display the GUI anyway
+        set gui true
+    }
     -h - --help {
         puts "  Usage: [info script -bare] \[options\]
 
@@ -538,6 +555,10 @@ Options:
   -b | --bitrate <bitrate>          target video bitrate (kbps)
   -q | --quality <quality>          target video quality (bits per pixel per frame)
   -S | --filesize                   target total filesize (MB)
+  -g | --gui                        display the GUI
+
+NB: The GUI is not displayed if CLI options are provided.
+    Use '-g' to display the GUI anyway.
 "
         exit 0
     }
@@ -569,74 +590,80 @@ Update Compute $Compute(Strategy)
 
 
 ## Build the GUI
+if {$gui} {
+    # Load Tk (without letting it parse arguments) and setup the resources
+    unset argv
+    package require Tk
+    LoadResources
 
-# Configure the window
-wm title . "Bitrate Calculator"
-wm resizable . 0 0
-wm iconphoto . -default ::img::brc
+    # Configure the window
+    wm title . "Bitrate Calculator"
+    wm resizable . 0 0
+    wm iconphoto . -default ::img::brc
 
-# Configure the required styles and select the theme
-ttk::style configure Italic.TLabel -font [dict merge [font actual [ttk::style lookup TLabel -font]] {-slant italic}]
-ttk::style theme use "clam"
+    # Configure the required styles and select the theme
+    ttk::style configure Italic.TLabel -font [dict merge [font actual [ttk::style lookup TLabel -font]] {-slant italic}]
+    ttk::style theme use "clam"
 
-# Build the GUI for the Video group
-ttk::labelframe .video                   -text "Video"
-set framelength [ttk::frame .video.length]
-ttk::label      $framelength.labelhours  -text "Hours"
-ttk::spinbox    $framelength.hours       -textvariable Video(Hours) -from 0 -increment 1 -to 1000 -justify right -width [string length "Hours"] -validate key -validatecommand {string is entier %P}
-ttk::label      $framelength.labelmins   -text "Minutes"
-ttk::spinbox    $framelength.mins        -textvariable Video(Minutes) -from 0 -increment 1 -to 59 -justify right -width [string length "Minutes"] -validate key -validatecommand {string is entier %P}
-ttk::label      $framelength.labelsecs   -text "Seconds"
-ttk::spinbox    $framelength.secs        -textvariable Video(Seconds) -from 0 -increment 1 -to 59 -justify right -width [string length "Seconds"] -validate key -validatecommand {string is entier %P}
-ttk::label      $framelength.labelrate   -text "Framerate"
-ttk::combobox   $framelength.rate        -textvariable Video(Rate) -values {23.976 24.0 25.0 29.97 30.0 50.0 59.94 60.0} -justify right -width [string length "Framerate"]
-ttk::label      $framelength.labelframes -text "Total frames"
-ttk::entry      $framelength.frames      -textvariable Video(Frames) -state readonly -justify right -width [string length "Total frames"]
-grid $framelength.labelhours $framelength.labelmins $framelength.labelsecs $framelength.labelrate $framelength.labelframes -padx 5
-grid $framelength.hours      $framelength.mins      $framelength.secs      $framelength.rate      $framelength.frames      -padx 5
-set framesize [ttk::frame .video.size]
-ttk::label      $framesize.labelwidth    -text "Width"
-ttk::spinbox    $framesize.width         -textvariable Video(Width) -from 0 -increment 1 -to 100000 -justify right -width [string length "Width"] -validate key -validatecommand {string is entier %P}
-ttk::label      $framesize.labelheight   -text "Height"
-ttk::spinbox    $framesize.height        -textvariable Video(Height) -from 0 -increment 1 -to 100000 -justify right -width [string length "Height"] -validate key -validatecommand {string is entier %P}
-ttk::label      $framesize.labelratio    -text "Ratio"
-ttk::entry      $framesize.ratio         -textvariable Video(Ratio) -state readonly -justify right -width [string length "Ratio"]
-grid $framesize.labelwidth $framesize.labelheight $framesize.labelratio -padx 5
-grid $framesize.width      $framesize.height      $framesize.ratio      -padx 5
-pack $framelength $framesize -side top -fill x -ipady 3
+    # Build the GUI for the Video group
+    ttk::labelframe .video                   -text "Video"
+    set framelength [ttk::frame .video.length]
+    ttk::label      $framelength.labelhours  -text "Hours"
+    ttk::spinbox    $framelength.hours       -textvariable Video(Hours) -from 0 -increment 1 -to 1000 -justify right -width [string length "Hours"] -validate key -validatecommand {string is entier %P}
+    ttk::label      $framelength.labelmins   -text "Minutes"
+    ttk::spinbox    $framelength.mins        -textvariable Video(Minutes) -from 0 -increment 1 -to 59 -justify right -width [string length "Minutes"] -validate key -validatecommand {string is entier %P}
+    ttk::label      $framelength.labelsecs   -text "Seconds"
+    ttk::spinbox    $framelength.secs        -textvariable Video(Seconds) -from 0 -increment 1 -to 59 -justify right -width [string length "Seconds"] -validate key -validatecommand {string is entier %P}
+    ttk::label      $framelength.labelrate   -text "Framerate"
+    ttk::combobox   $framelength.rate        -textvariable Video(Rate) -values {23.976 24.0 25.0 29.97 30.0 50.0 59.94 60.0} -justify right -width [string length "Framerate"]
+    ttk::label      $framelength.labelframes -text "Total frames"
+    ttk::entry      $framelength.frames      -textvariable Video(Frames) -state readonly -justify right -width [string length "Total frames"]
+    grid $framelength.labelhours $framelength.labelmins $framelength.labelsecs $framelength.labelrate $framelength.labelframes -padx 5
+    grid $framelength.hours      $framelength.mins      $framelength.secs      $framelength.rate      $framelength.frames      -padx 5
+    set framesize [ttk::frame .video.size]
+    ttk::label      $framesize.labelwidth    -text "Width"
+    ttk::spinbox    $framesize.width         -textvariable Video(Width) -from 0 -increment 1 -to 100000 -justify right -width [string length "Width"] -validate key -validatecommand {string is entier %P}
+    ttk::label      $framesize.labelheight   -text "Height"
+    ttk::spinbox    $framesize.height        -textvariable Video(Height) -from 0 -increment 1 -to 100000 -justify right -width [string length "Height"] -validate key -validatecommand {string is entier %P}
+    ttk::label      $framesize.labelratio    -text "Ratio"
+    ttk::entry      $framesize.ratio         -textvariable Video(Ratio) -state readonly -justify right -width [string length "Ratio"]
+    grid $framesize.labelwidth $framesize.labelheight $framesize.labelratio -padx 5
+    grid $framesize.width      $framesize.height      $framesize.ratio      -padx 5
+    pack $framelength $framesize -side top -fill x -ipady 3
 
-# Build the GUI for the Audio group
-ttk::labelframe .audio
-ttk::frame      .audio.group
-ttk::label      .audio.group.label  -text "Audio"
-ttk::button     .audio.group.add    -style Toolbutton -image ::img::add    -command {AddAudioTrack}
-ttk::button     .audio.group.remove -style Toolbutton -image ::img::remove -command {RemoveAudioTrack}
-pack .audio.group.label                   -side left -ipadx 3
-pack .audio.group.remove .audio.group.add -side right
-.audio configure -labelwidget .audio.group
+    # Build the GUI for the Audio group
+    ttk::labelframe .audio
+    ttk::frame      .audio.group
+    ttk::label      .audio.group.label  -text "Audio"
+    ttk::button     .audio.group.add    -style Toolbutton -image ::img::add    -command {AddAudioTrack}
+    ttk::button     .audio.group.remove -style Toolbutton -image ::img::remove -command {RemoveAudioTrack}
+    pack .audio.group.label                   -side left -ipadx 3
+    pack .audio.group.remove .audio.group.add -side right
+    .audio configure -labelwidget .audio.group
 
-# Build the GUI for the Compute group
-ttk::labelframe .calc -text "Compute"
-ttk::label      .calc.labelbitrate     -text "Video bitrate:"
-ttk::entry      .calc.bitrate          -textvariable Compute(Bitrate) -justify right -width 5 -validate key -validatecommand {string is entier %P}
-ttk::label      .calc.labelbitrateunit -text "kbps"
-ttk::label      .calc.labelquality     -text "Video quality:"
-ttk::entry      .calc.quality          -textvariable Compute(Quality) -justify right -width 5 -validate key -validatecommand {string is entier %P}
-ttk::label      .calc.labelqualityunit -text "bits/(pixel*frame)"
-ttk::label      .calc.labelsize        -text "File size:"
-ttk::entry      .calc.size             -textvariable Compute(Size) -justify right -width 7 -validate key -validatecommand {string is entier %P}
-ttk::label      .calc.labelsizeunit    -text "MB"
-grid .calc.labelbitrate .calc.bitrate .calc.labelbitrateunit -sticky nsew -padx 2 -pady 10
-grid .calc.labelquality .calc.quality .calc.labelqualityunit -sticky nsew -padx 2 -pady 10
-grid .calc.labelsize    .calc.size    .calc.labelsizeunit    -sticky nsew -padx 2 -pady 10
-grid configure .calc.labelbitrate .calc.labelquality .calc.labelsize -padx 3
+    # Build the GUI for the Compute group
+    ttk::labelframe .calc -text "Compute"
+    ttk::label      .calc.labelbitrate     -text "Video bitrate:"
+    ttk::entry      .calc.bitrate          -textvariable Compute(Bitrate) -justify right -width 5 -validate key -validatecommand {string is entier %P}
+    ttk::label      .calc.labelbitrateunit -text "kbps"
+    ttk::label      .calc.labelquality     -text "Video quality:"
+    ttk::entry      .calc.quality          -textvariable Compute(Quality) -justify right -width 5 -validate key -validatecommand {string is entier %P}
+    ttk::label      .calc.labelqualityunit -text "bits/(pixel*frame)"
+    ttk::label      .calc.labelsize        -text "File size:"
+    ttk::entry      .calc.size             -textvariable Compute(Size) -justify right -width 7 -validate key -validatecommand {string is entier %P}
+    ttk::label      .calc.labelsizeunit    -text "MB"
+    grid .calc.labelbitrate .calc.bitrate .calc.labelbitrateunit -sticky nsew -padx 2 -pady 10
+    grid .calc.labelquality .calc.quality .calc.labelqualityunit -sticky nsew -padx 2 -pady 10
+    grid .calc.labelsize    .calc.size    .calc.labelsizeunit    -sticky nsew -padx 2 -pady 10
+    grid configure .calc.labelbitrate .calc.labelquality .calc.labelsize -padx 3
 
-# Assemble it all
-grid .video .calc -sticky ew -padx 5 -pady 5
-grid .audio ^     -sticky ew -padx 5 -pady 5
+    # Assemble it all
+    grid .video .calc -sticky ew -padx 5 -pady 5
+    grid .audio ^     -sticky ew -padx 5 -pady 5
 
-# Start out with one track
-AddAudioTrack
+    # Start out with one track
+    AddAudioTrack
+}
 
 
 # Apply the CLI track settings
@@ -649,6 +676,33 @@ foreach track $clitracks {
     }
     # Set the track bitrate
     set Audio(Bitrate:$id) $bitrate
+}
+
+
+# Display the computed values if no GUI
+if {!$gui} {
+    puts "\[Video\]
+  Duration:         $Video(Hours):$Video(Minutes):$Video(Seconds)
+  Framerate:        $Video(Rate) fps
+  Frames:           $Video(Frames)
+  Size:             $Video(Width)x$Video(Height)
+  Ratio:            $Video(Ratio)
+
+\[Audio\]"
+    for {set id 1} {$id <= $Audio(Tracks)} {incr id} {
+        puts "  \[Track $id\]
+    Bitrate:        $Audio(Bitrate:$id) kbps
+    Size:           $Audio(Size:$id) MB"
+    }
+    if {$Audio(Tracks) == 0} {
+        puts "  No audio tracks."
+    }
+    puts "
+\[Compute\]
+  Video bitrate:    $Compute(Bitrate) kbps
+  Video quality:    $Compute(Quality) bits/(pixel*frame)
+  File size:        $Compute(Size) MB
+"
 }
 
 
