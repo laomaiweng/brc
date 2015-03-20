@@ -647,7 +647,7 @@ if {$gui} {
     ttk::entry      .calc.bitrate          -textvariable Compute(Bitrate) -justify right -width 5 -validate key -validatecommand {string is entier %P}
     ttk::label      .calc.labelbitrateunit -text "kbps"
     ttk::label      .calc.labelquality     -text "Video quality:"
-    ttk::entry      .calc.quality          -textvariable Compute(Quality) -justify right -width 5 -validate key -validatecommand {string is entier %P}
+    ttk::entry      .calc.quality          -textvariable Compute(Quality) -justify right -width 5 -validate key -validatecommand {string is double %P}
     ttk::label      .calc.labelqualityunit -text "bits/(pixel*frame)"
     ttk::label      .calc.labelsize        -text "File size:"
     ttk::entry      .calc.size             -textvariable Compute(Size) -justify right -width 7 -validate key -validatecommand {string is entier %P}
